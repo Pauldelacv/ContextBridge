@@ -2,7 +2,54 @@ import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
 import type { Database } from "@/server/db/client";
-import type { SyncJob, SyncJobType } from "@/server/db/schema";
+import type { SyncJob, SyncJobStatus, SyncJobType } from "@/server/db/schema";
+
+/**
+ * Claiming a job needs `FOR UPDATE SKIP LOCKED`, which means raw SQL — and
+ * raw SQL returns the database's own snake_case column names rather than the
+ * camelCase field names the schema exposes. This row type and mapper make that
+ * boundary explicit; without it every multi-word field silently reads as
+ * `undefined` at runtime while still type-checking.
+ */
+interface SyncJobRow extends Record<string, unknown> {
+  id: string;
+  organization_id: string;
+  integration_id: string | null;
+  type: SyncJobType;
+  payload: Record<string, unknown>;
+  status: SyncJobStatus;
+  idempotency_key: string;
+  attempts: number;
+  max_attempts: number;
+  run_at: Date;
+  locked_at: Date | null;
+  locked_by: string | null;
+  last_error: string | null;
+  created_at: Date;
+  updated_at: Date;
+  completed_at: Date | null;
+}
+
+function toSyncJob(row: SyncJobRow): SyncJob {
+  return {
+    id: row.id,
+    organizationId: row.organization_id,
+    integrationId: row.integration_id,
+    type: row.type,
+    payload: row.payload,
+    status: row.status,
+    idempotencyKey: row.idempotency_key,
+    attempts: row.attempts,
+    maxAttempts: row.max_attempts,
+    runAt: row.run_at,
+    lockedAt: row.locked_at,
+    lockedBy: row.locked_by,
+    lastError: row.last_error,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    completedAt: row.completed_at,
+  };
+}
 
 export interface EnqueueInput {
   organizationId: string;
@@ -37,7 +84,7 @@ export async function enqueueJob(
     input.idempotencyKey ??
     buildIdempotencyKey([input.organizationId, input.integrationId, input.type, Date.now()]);
 
-  const result = await db.execute<SyncJob>(sql`
+  const result = await db.execute<SyncJobRow>(sql`
     INSERT INTO sync_jobs (
       organization_id, integration_id, type, payload, status,
       idempotency_key, attempts, max_attempts, run_at
@@ -62,8 +109,8 @@ export async function enqueueJob(
     RETURNING *
   `);
 
-  const job = result.rows[0] ?? null;
-  return { job, deduplicated: job === null };
+  const row = result.rows[0];
+  return { job: row ? toSyncJob(row) : null, deduplicated: row === undefined };
 }
 
 /**
@@ -74,7 +121,7 @@ export async function enqueueJob(
  * contention costs a skipped row rather than a lock wait (ADR 0003).
  */
 export async function claimNextJob(workerId: string, db: Database = getDb()): Promise<SyncJob | null> {
-  const result = await db.execute<SyncJob>(sql`
+  const result = await db.execute<SyncJobRow>(sql`
     UPDATE sync_jobs SET
       status = 'running',
       attempts = attempts + 1,
@@ -90,7 +137,8 @@ export async function claimNextJob(workerId: string, db: Database = getDb()): Pr
     )
     RETURNING *
   `);
-  return result.rows[0] ?? null;
+  const row = result.rows[0];
+  return row ? toSyncJob(row) : null;
 }
 
 export async function completeJob(jobId: string, db: Database = getDb()): Promise<void> {

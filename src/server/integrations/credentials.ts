@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { getEnv } from "@/server/config/env";
+import { AppError } from "@/server/errors";
 
 export interface EncryptedEnvelope {
   iv: string;
@@ -37,11 +38,25 @@ export function encryptCredentials(value: unknown): EncryptedEnvelope {
 }
 
 export function decryptCredentials<T>(envelope: EncryptedEnvelope): T {
-  const decipher = createDecipheriv(ALGORITHM, key(), Buffer.from(envelope.iv, "base64"));
-  decipher.setAuthTag(Buffer.from(envelope.tag, "base64"));
-  const plaintext = Buffer.concat([
-    decipher.update(Buffer.from(envelope.ciphertext, "base64")),
-    decipher.final(),
-  ]);
-  return JSON.parse(plaintext.toString("utf8")) as T;
+  try {
+    const decipher = createDecipheriv(ALGORITHM, key(), Buffer.from(envelope.iv, "base64"));
+    decipher.setAuthTag(Buffer.from(envelope.tag, "base64"));
+    const plaintext = Buffer.concat([
+      decipher.update(Buffer.from(envelope.ciphertext, "base64")),
+      decipher.final(),
+    ]);
+    return JSON.parse(plaintext.toString("utf8")) as T;
+  } catch (cause) {
+    // GCM authentication failed: either CREDENTIAL_SECRET changed since these
+    // credentials were stored, or the row was tampered with. Retrying cannot
+    // fix either, so this must be non-retryable — otherwise the worker burns
+    // every attempt on a job that can never succeed.
+    throw new AppError(
+      "validation_failed",
+      "Stored credentials could not be decrypted. This usually means CREDENTIAL_SECRET " +
+        "changed after the integration was connected — reconnect the source to store " +
+        "its credentials under the current key.",
+      { cause, retryable: false },
+    );
+  }
 }
