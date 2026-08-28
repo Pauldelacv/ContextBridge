@@ -2,6 +2,7 @@
  * Background worker entrypoint. Runs alongside the web process:
  *   npm run worker
  */
+import "./load-env";
 import { closeDb } from "../src/server/db/client";
 import { logger } from "../src/server/logging/logger";
 import { runWorker } from "../src/server/jobs/worker";

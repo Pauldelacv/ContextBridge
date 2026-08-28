@@ -2,6 +2,7 @@
  * Applies the SQL migrations in ./drizzle. Safe to run repeatedly — drizzle
  * records what it has applied in its own journal table.
  */
+import "./load-env";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { closeDb, getDb } from "../src/server/db/client";
 import { logger } from "../src/server/logging/logger";

@@ -7,6 +7,7 @@
  *
  *   npm run db:seed
  */
+import "./load-env";
 import { eq } from "drizzle-orm";
 import { hashPassword } from "../src/server/auth/password";
 import { closeDb, getDb } from "../src/server/db/client";
