@@ -29,6 +29,14 @@ export interface SyncContext {
   mode: "full" | "incremental";
   logger: Logger;
   signal?: AbortSignal;
+  /**
+   * Called when the provider hands back rotated credentials mid-sync (Google
+   * rotates access tokens hourly, and a large sync outlives one).
+   *
+   * It is a callback rather than a direct write so connectors stay unaware of
+   * the database: the sync driver supplies it and owns the encryption.
+   */
+  onCredentialsRefreshed?: (credentials: Record<string, unknown>) => Promise<void>;
 }
 
 /**

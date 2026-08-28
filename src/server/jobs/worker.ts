@@ -21,12 +21,6 @@ async function execute(job: SyncJob, signal: AbortSignal): Promise<void> {
     case "integration.incremental_sync":
       await runSync(job, log, signal);
       return;
-    case "document.ingest":
-    case "document.delete":
-      // Single-document jobs go through the same sync path: the provider's
-      // cursor already knows how to fetch just what changed.
-      await runSync(job, log, signal);
-      return;
     default: {
       const exhaustive: never = job.type;
       throw new Error(`Unhandled job type: ${String(exhaustive)}`);

@@ -197,11 +197,7 @@ export const chunks = pgTable(
 );
 
 export type SyncJobStatus = "pending" | "running" | "succeeded" | "failed" | "dead";
-export type SyncJobType =
-  | "integration.full_sync"
-  | "integration.incremental_sync"
-  | "document.ingest"
-  | "document.delete";
+export type SyncJobType = "integration.full_sync" | "integration.incremental_sync";
 
 /**
  * Postgres-backed job queue. Claiming uses `FOR UPDATE SKIP LOCKED`, so several

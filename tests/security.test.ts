@@ -6,7 +6,7 @@ import { login, signup } from "@/server/auth/service";
 import { decodeSessionCookie, encodeSessionCookie, resolveSession } from "@/server/auth/session";
 import { decryptCredentials, encryptCredentials } from "@/server/integrations/credentials";
 import { decodeOAuthState, encodeOAuthState } from "@/server/integrations/service";
-import { verifySlackSignature } from "@/server/slack/verify";
+import { verifySlackSignature } from "@/server/slack/signature";
 import { resetDatabase } from "./helpers/db";
 
 describe("password hashing", () => {

@@ -79,6 +79,13 @@ export async function runSync(
       mode,
       logger: log,
       signal,
+      onCredentialsRefreshed: async (refreshed) => {
+        await db
+          .update(integrations)
+          .set({ credentials: encryptCredentials(refreshed), updatedAt: new Date() })
+          .where(eq(integrations.id, record.id));
+        log.info("sync.credentials_refreshed");
+      },
     });
 
     for await (const page of pages) {
@@ -146,18 +153,4 @@ export async function runSync(
       .where(eq(integrations.id, record.id));
     throw error;
   }
-}
-
-/**
- * Re-encrypts credentials that a provider refreshed mid-sync (Google rotates
- * access tokens hourly). Called by the client when `didRefresh` is set.
- */
-export async function persistRefreshedCredentials(
-  integrationId: string,
-  credentials: Record<string, unknown>,
-): Promise<void> {
-  await getDb()
-    .update(integrations)
-    .set({ credentials: encryptCredentials(credentials), updatedAt: new Date() })
-    .where(eq(integrations.id, integrationId));
 }

@@ -128,6 +128,18 @@ export const googleDriveIntegration: SourceIntegration = {
       context.logger,
     );
 
+    /**
+     * Hand a rotated access token back to the driver so it is stored. Without
+     * this the refreshed token is discarded and every subsequent sync pays for
+     * a fresh refresh round trip.
+     */
+    const persistRefreshedCredentials = async (): Promise<void> => {
+      if (!client.didRefresh || !context.onCredentialsRefreshed) return;
+      await context.onCredentialsRefreshed(
+        client.currentCredentials as unknown as Record<string, unknown>,
+      );
+    };
+
     const load = async (file: DriveFile): Promise<NormalizedDocument | null> => {
       if (!isIngestibleMimeType(file.mimeType)) return null;
       const raw = await client.fetchContent(file);
@@ -159,6 +171,7 @@ export const googleDriveIntegration: SourceIntegration = {
         const nextToken: string | null = changes.nextPageToken ?? null;
         const settled = changes.newStartPageToken ?? null;
 
+        await persistRefreshedCredentials();
         yield {
           documents,
           deletedExternalIds,
@@ -187,6 +200,8 @@ export const googleDriveIntegration: SourceIntegration = {
       }
 
       filePageToken = page.nextPageToken ?? undefined;
+
+      await persistRefreshedCredentials();
 
       if (filePageToken) {
         yield { documents, cursor: { filePageToken } };

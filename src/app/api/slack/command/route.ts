@@ -5,7 +5,8 @@ import { SlackClient } from "@/server/integrations/slack/client";
 import { route } from "@/server/http/handler";
 import { createLogger } from "@/server/logging/logger";
 import { ask } from "@/server/retrieval/ask";
-import { formatSlackAnswer, verifySlackSignature } from "@/server/slack/verify";
+import { formatSlackAnswer } from "@/server/slack/format";
+import { verifySlackSignature } from "@/server/slack/signature";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
