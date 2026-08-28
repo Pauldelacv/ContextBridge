@@ -40,10 +40,10 @@ function normalise(fields: LogFields): LogFields {
 }
 
 function create(context: LogFields): Logger {
-  const threshold = LEVEL_WEIGHT[getEnv().LOG_LEVEL];
-
   const emit = (level: LogLevel, message: string, fields?: LogFields): void => {
-    if (LEVEL_WEIGHT[level] < threshold) return;
+    // Read the threshold lazily: the module-level `logger` is constructed at
+    // import time, before the environment is necessarily populated.
+    if (LEVEL_WEIGHT[level] < LEVEL_WEIGHT[getEnv().LOG_LEVEL]) return;
     const line = JSON.stringify({
       level,
       time: new Date().toISOString(),

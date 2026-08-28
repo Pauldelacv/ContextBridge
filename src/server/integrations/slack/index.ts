@@ -34,7 +34,7 @@ const SCOPES = [
 const MIN_THREAD_CHARACTERS = 80;
 
 function redirectUri(): string {
-  return `${getEnv().APP_URL}/api/integrations/slack/callback`;
+  return `${getEnv().APP_URL}/api/oauth/slack/callback`;
 }
 
 /**

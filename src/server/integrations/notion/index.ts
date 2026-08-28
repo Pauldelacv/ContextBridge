@@ -27,7 +27,7 @@ const Cursor = z.object({
 const MAX_BLOCK_DEPTH = 4;
 
 function redirectUri(): string {
-  return `${getEnv().APP_URL}/api/integrations/notion/callback`;
+  return `${getEnv().APP_URL}/api/oauth/notion/callback`;
 }
 
 /**

@@ -2,7 +2,8 @@
  * Test bootstrap. Points the suite at a dedicated database and forces the
  * offline embedding provider so no test needs network access or an API key.
  */
-process.env.NODE_ENV = "test";
+// NODE_ENV is typed readonly; assign through the record to set it for the run.
+(process.env as Record<string, string>).NODE_ENV = "test";
 process.env.DATABASE_URL =
   process.env.TEST_DATABASE_URL ??
   "postgres://contextbridge:contextbridge@localhost:5432/contextbridge_test";

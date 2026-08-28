@@ -106,10 +106,16 @@ export async function purgeExpiredSessions(): Promise<number> {
   return deleted.length;
 }
 
-export const sessionCookieOptions = {
-  httpOnly: true,
-  sameSite: "lax",
-  path: "/",
-  secure: getEnv().NODE_ENV === "production",
-  maxAge: SESSION_TTL_MS / 1000,
-} as const;
+/**
+ * Computed per call rather than at module scope: reading env at import time
+ * makes the module unloadable during a build, before env is populated.
+ */
+export function sessionCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: getEnv().NODE_ENV === "production",
+    maxAge: SESSION_TTL_MS / 1000,
+  } as const;
+}

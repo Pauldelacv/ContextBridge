@@ -33,7 +33,7 @@ const SCOPES = [
 ].join(" ");
 
 function redirectUri(): string {
-  return `${getEnv().APP_URL}/api/integrations/google_drive/callback`;
+  return `${getEnv().APP_URL}/api/oauth/google_drive/callback`;
 }
 
 function toNormalizedDocument(file: DriveFile, rawContent: string): NormalizedDocument {
